@@ -36,8 +36,10 @@ jobs:
       run: doctl auth init --access-token ${{ secrets.DIGITAL_OCEAN_ACCESS_TOKEN }}
 
     - name: Deploy to Digital Ocean
+      env:
+        SSHPASS: ${{ secrets.DROPLET_PASSWORD }}
       run: |
-        export SSHPASS=${{ secrets.DROPLET_PASSWORD }}
-        sshpass -e ssh -o StrictHostKeyChecking=no root@$DROPLET_IP "pkill -f go-cicd || true"
+        sshpass -e ssh -vvv -o StrictHostKeyChecking=no root@$DROPLET_IP "pkill -f go-cicd || true"
         sshpass -e scp -o StrictHostKeyChecking=no ./go-cicd root@$DROPLET_IP:/root/
         sshpass -e ssh -o StrictHostKeyChecking=no root@$DROPLET_IP "nohup /root/golang/go-cicd &"
+
