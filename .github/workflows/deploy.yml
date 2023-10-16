@@ -32,24 +32,18 @@ jobs:
     - name: Install doctl
       run: sudo snap install doctl
 
-    - name: Grant doctl access to SSH keys (Snap)
-      run: sudo snap connect doctl:ssh-keys
-
-    - name: SSH Key Setup
+    - name: Start SSH agent
       run: |
-        echo "${{ secrets.DIGITAL_OCEAN_SSH_KEY }}" > do_ssh_key.pem
-        chmod 600 do_ssh_key.pem
+        eval $(ssh-agent -s)
+        ssh-add <(echo "${{ secrets.DIGITAL_OCEAN_SSH_KEY }}")
 
     - name: Authenticate with Digital Ocean
       run: doctl auth init --access-token ${{ secrets.DIGITAL_OCEAN_ACCESS_TOKEN }}
 
     - name: Deploy to Digital Ocean
       run: |
-        mkdir -p $HOME/.temp_ssh
-        echo "${{ secrets.DIGITAL_OCEAN_SSH_KEY }}" > $HOME/.temp_ssh/do_ssh_key.pem
-        chmod 600 $HOME/.temp_ssh/do_ssh_key.pem
-        export SSH_KEY_PATH="$HOME/.temp_ssh/do_ssh_key.pem"
-        doctl compute ssh ${{ secrets.DROPLET_ID }} --ssh-key-path $SSH_KEY_PATH --ssh-command "pkill -f go-cicd || true"
-        scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i $SSH_KEY_PATH ./go-cicd root@$DROPLET_IP:/root/
-        doctl compute ssh ${{ secrets.DROPLET_ID }} --ssh-key-path $SSH_KEY_PATH --ssh-command "nohup /root/tc/go-cicd &"
+        sudo snap connect doctl:ssh-keys
+        doctl compute ssh ${{ secrets.DROPLET_ID }} --ssh-key-path do_ssh_key.pem --ssh-command "pkill -f go-cicd || true"
+        scp -o StrictHostKeyChecking=no -i do_ssh_key.pem ./go-cicd root@$DROPLET_IP:/root/
+        doctl compute ssh ${{ secrets.DROPLET_ID }} --ssh-key-path do_ssh_key.pem --ssh-command "nohup /root/tc/go-cicd &"
 
