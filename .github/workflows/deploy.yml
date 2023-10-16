@@ -6,7 +6,7 @@ on:
       - main
 
 env:
-    DROPLET_IP: 138.68.69.149
+  DROPLET_IP: 138.68.69.149
 
 jobs:
   build:
@@ -22,7 +22,7 @@ jobs:
         go-version: 1.21.1
 
     - name: Build
-      run: go build -o my_app ./...
+      run: go build -o go-cicd ./...
 
   deploy:
     runs-on: ubuntu-latest
@@ -32,10 +32,13 @@ jobs:
     - name: Install doctl
       run: sudo snap install doctl
 
-    - name: Start SSH agent
+    - name: Grant doctl access to SSH keys (Snap)
+      run: sudo snap connect doctl:ssh-keys
+
+    - name: SSH Key Setup
       run: |
-        eval $(ssh-agent -s)
-        ssh-add <(echo "${{ secrets.DIGITAL_OCEAN_SSH_KEY }}")
+        echo "${{ secrets.DIGITAL_OCEAN_SSH_KEY }}" > do_ssh_key.pem
+        chmod 600 do_ssh_key.pem
 
     - name: Authenticate with Digital Ocean
       run: doctl auth init --access-token ${{ secrets.DIGITAL_OCEAN_ACCESS_TOKEN }}
