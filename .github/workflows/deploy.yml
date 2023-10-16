@@ -1,0 +1,49 @@
+name: Deploy to Digital Ocean with SSH Key and doctl
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+    DROPLET_IP: 138.68.69.149
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Setup Go environment
+      uses: actions/setup-go@v2
+      with:
+        go-version: 1.21.1
+
+    - name: Build
+      run: go build -o my_app ./...
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+    - name: Install doctl
+      run: sudo snap install doctl
+
+    - name: SSH Key Setup
+      run: |
+        echo "${{ secrets.DIGITAL_OCEAN_SSH_KEY }}" > do_ssh_key.pem
+        chmod 600 do_ssh_key.pem
+        ssh-add do_ssh_key.pem
+
+    - name: Authenticate with Digital Ocean
+      run: doctl auth init --access-token ${{ secrets.DIGITAL_OCEAN_ACCESS_TOKEN }}
+
+    - name: Deploy to Digital Ocean
+      run: |
+        doctl compute ssh ${{ secret.DROPLET_ID }} --ssh-key-path do_ssh_key.pem --command "pkill -f go-cicd || true"
+        scp -o StrictHostKeyChecking=no -i do_ssh_key.pem ./go-cicd root@$DROPLET_IP:/root/
+        doctl compute ssh ${{ secret.DROPLET_ID }} --ssh-key-path do_ssh_key.pem --command "nohup /root/tc/go-cicd &"
+
