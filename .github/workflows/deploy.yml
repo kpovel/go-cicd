@@ -54,8 +54,6 @@ jobs:
 
     - name: Deploy to Digital Ocean
       run: |
-        sudo snap connect doctl:ssh-keys
-        doctl compute ssh ${{ secrets.DROPLET_ID }} --ssh-key-path do_ssh_key.pem --ssh-command "pkill -f go-cicd || true"
-        scp -o StrictHostKeyChecking=no -i do_ssh_key.pem ./go-cicd root@$DROPLET_IP:/root/
-        doctl compute ssh ${{ secrets.DROPLET_ID }} --ssh-key-path do_ssh_key.pem --ssh-command "nohup /root/tc/go-cicd &"
-
+        ssh -i <(echo "${{ secrets.DIGITAL_OCEAN_SSH_KEY }}") -o StrictHostKeyChecking=no root@$DROPLET_IP "pkill -f go-cicd || true"
+        scp -o StrictHostKeyChecking=no -o "IdentityFile=$(echo "${{ secrets.DIGITAL_OCEAN_SSH_KEY }}")" ./go-cicd root@$DROPLET_IP:/root/
+        ssh -i <(echo "${{ secrets.DIGITAL_OCEAN_SSH_KEY }}") -o StrictHostKeyChecking=no root@$DROPLET_IP "nohup /root/tc/go-cicd &"
