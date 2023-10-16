@@ -1,4 +1,4 @@
-name: Deploy to Digital Ocean with SSH Key and doctl
+name: Deploy to Digital Ocean with SSH Password
 
 on:
   push:
@@ -6,7 +6,7 @@ on:
       - main
 
 env:
-  DROPLET_IP: 138.68.69.149
+  DROPLET_IP: 64.227.114.176
 
 jobs:
   build:
@@ -29,31 +29,15 @@ jobs:
     needs: build
 
     steps:
-    - name: Install doctl
-      run: sudo snap install doctl
-
-    - name: Debugging
-      run: pwd && ls -la
-
-    - name: Write DigitalOcean SSH key to file
-      run: echo "${{ secrets.DIGITAL_OCEAN_SSH_KEY }}" > do_ssh_key.pem
-
-    - name: Debugging
-      run: ls -la && cat do_ssh_key.pem
-
-    - name: Set permissions for SSH key
-      run: chmod 600 do_ssh_key.pem
-
-    - name: Start SSH agent
-      run: |
-        eval $(ssh-agent -s)
-        ssh-add do_ssh_key.pem
+    - name: Install sshpass
+      run: sudo apt-get update && sudo apt-get install -y sshpass
 
     - name: Authenticate with Digital Ocean
       run: doctl auth init --access-token ${{ secrets.DIGITAL_OCEAN_ACCESS_TOKEN }}
 
     - name: Deploy to Digital Ocean
       run: |
-        ssh -i <(echo "${{ secrets.DIGITAL_OCEAN_SSH_KEY }}") -o StrictHostKeyChecking=no root@$DROPLET_IP "pkill -f go-cicd || true"
-        scp -o StrictHostKeyChecking=no -o "IdentityFile=$(echo "${{ secrets.DIGITAL_OCEAN_SSH_KEY }}")" ./go-cicd root@$DROPLET_IP:/root/
-        ssh -i <(echo "${{ secrets.DIGITAL_OCEAN_SSH_KEY }}") -o StrictHostKeyChecking=no root@$DROPLET_IP "nohup /root/tc/go-cicd &"
+        export SSHPASS=${{ secrets.DROPLET_PASSWORD }}
+        sshpass -e ssh -o StrictHostKeyChecking=no root@$DROPLET_IP "pkill -f go-cicd || true"
+        sshpass -e scp -o StrictHostKeyChecking=no ./go-cicd root@$DROPLET_IP:/root/
+        sshpass -e ssh -o StrictHostKeyChecking=no root@$DROPLET_IP "nohup /root/golang/go-cicd &"
