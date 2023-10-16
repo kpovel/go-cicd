@@ -43,7 +43,7 @@ jobs:
 
     - name: Deploy to Digital Ocean
       run: |
-        doctl compute ssh ${{ secret.DROPLET_ID }} --ssh-key-path do_ssh_key.pem --command "pkill -f go-cicd || true"
+        doctl compute ssh ${{ secrets.DROPLET_ID }} --ssh-key-path do_ssh_key.pem --command "pkill -f go-cicd || true"
         scp -o StrictHostKeyChecking=no -i do_ssh_key.pem ./go-cicd root@$DROPLET_IP:/root/
-        doctl compute ssh ${{ secret.DROPLET_ID }} --ssh-key-path do_ssh_key.pem --command "nohup /root/tc/go-cicd &"
+        doctl compute ssh ${{ secrets.DROPLET_ID }} --ssh-key-path do_ssh_key.pem --command "nohup /root/tc/go-cicd &"
 
