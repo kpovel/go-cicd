@@ -30,7 +30,7 @@ jobs:
 
     steps:
     - name: Install sshpass
-      run: sudo apt-get update && sudo apt-get install -y sshpass
+      run: sudo apt-get update && sudo snap install doctl && sudo apt-get install -y sshpass
 
     - name: Authenticate with Digital Ocean
       run: doctl auth init --access-token ${{ secrets.DIGITAL_OCEAN_ACCESS_TOKEN }}
