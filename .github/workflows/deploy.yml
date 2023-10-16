@@ -45,7 +45,11 @@ jobs:
 
     - name: Deploy to Digital Ocean
       run: |
-        doctl compute ssh ${{ secrets.DROPLET_ID }} --ssh-key-path do_ssh_key.pem --ssh-command "pkill -f go-cicd || true"
-        scp -o StrictHostKeyChecking=no -i do_ssh_key.pem ./go-cicd root@$DROPLET_IP:/root/
-        doctl compute ssh ${{ secrets.DROPLET_ID }} --ssh-key-path do_ssh_key.pem --ssh-command "nohup /root/tc/go-cicd &"
+        mkdir -p $HOME/.temp_ssh
+        echo "${{ secrets.DIGITAL_OCEAN_SSH_KEY }}" > $HOME/.temp_ssh/do_ssh_key.pem
+        chmod 600 $HOME/.temp_ssh/do_ssh_key.pem
+        export SSH_KEY_PATH="$HOME/.temp_ssh/do_ssh_key.pem"
+        doctl compute ssh ${{ secrets.DROPLET_ID }} --ssh-key-path $SSH_KEY_PATH --ssh-command "pkill -f go-cicd || true"
+        scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i $SSH_KEY_PATH ./go-cicd root@$DROPLET_IP:/root/
+        doctl compute ssh ${{ secrets.DROPLET_ID }} --ssh-key-path $SSH_KEY_PATH --ssh-command "nohup /root/tc/go-cicd &"
 
