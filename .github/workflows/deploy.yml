@@ -32,10 +32,22 @@ jobs:
     - name: Install doctl
       run: sudo snap install doctl
 
+    - name: Debugging
+      run: pwd && ls -la
+
+    - name: Write DigitalOcean SSH key to file
+      run: echo "${{ secrets.DIGITAL_OCEAN_SSH_KEY }}" > do_ssh_key.pem
+
+    - name: Debugging
+      run: ls -la && cat do_ssh_key.pem
+
+    - name: Set permissions for SSH key
+      run: chmod 600 do_ssh_key.pem
+
     - name: Start SSH agent
       run: |
         eval $(ssh-agent -s)
-        ssh-add <(echo "${{ secrets.DIGITAL_OCEAN_SSH_KEY }}")
+        ssh-add do_ssh_key.pem
 
     - name: Authenticate with Digital Ocean
       run: doctl auth init --access-token ${{ secrets.DIGITAL_OCEAN_ACCESS_TOKEN }}
